@@ -75,8 +75,8 @@ class MainActivity : Activity() {
     }
 
     private fun updateClock() {
-        val clock = findViewWithTag<TextView>("home_clock")
-        val date = findViewWithTag<TextView>("home_date")
+        val clock = root.findViewWithTag<TextView>("home_clock")
+        val date = root.findViewWithTag<TextView>("home_date")
         clock?.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         date?.text = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("pt", "BR"))
             .format(Date()).replaceFirstChar { it.uppercase() }
