@@ -82,7 +82,7 @@ class MainActivity : Activity() {
         search = EditText(this).apply {
             hint = "Pesquisar aplicativos"
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             setTextColor(Color.WHITE)
             setHintTextColor(0xCCFFFFFF.toInt())
             setPadding(dp(16), 0, dp(16), 0)
