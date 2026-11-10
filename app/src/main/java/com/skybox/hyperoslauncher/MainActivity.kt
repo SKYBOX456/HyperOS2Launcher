@@ -253,63 +253,101 @@ class MainActivity : Activity() {
     private fun showSettings() {
         currentScreen = Screen.SETTINGS
         newRoot()
-        val header = LinearLayout(this).apply {
+        root.setPadding(dp(20), dp(18), dp(20), dp(14))
+
+        val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        header.addView(text("Configurações", 23f, Color.WHITE, true), LinearLayout.LayoutParams(0, -2, 1f))
-        header.addView(actionButton("Voltar") { showHome() })
-        root.addView(header)
+        val back = TextView(this).apply {
+            text = "‹"
+            textSize = 34f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            background = ripple(0x22FFFFFF, 40)
+            setOnClickListener { showHome() }
+        }
+        topBar.addView(back, LinearLayout.LayoutParams(dp(48), dp(48)))
+        topBar.addView(text("Configurações", 25f, Color.WHITE, true).apply {
+            setPadding(dp(8), 0, 0, 0)
+        })
+        root.addView(topBar)
 
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val scroll = ScrollView(this).apply { addView(content) }
+        val scroll = ScrollView(this).apply { clipToPadding = false }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(12), 0, dp(28))
+        }
+        scroll.addView(content)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
+        content.addView(text("Personalize seu espaço", 14f, 0xCCFFFFFF.toInt()).apply {
+            setPadding(dp(4), dp(4), 0, dp(18))
+        })
+
+        content.addView(settingsCard("Aparência", "Cores e tamanho dos elementos"))
         content.addView(sectionTitle("Papel de parede"))
-        val names = listOf("Roxo", "Oceano", "Rosa", "Verde", "Ameixa")
+        val names = listOf("Lavanda", "Oceano", "Rosa", "Sálvia", "Ameixa")
+        val wallpaperRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
         backgrounds.indices.forEach { index ->
-            content.addView(settingButton(names[index] + if (wallpaperIndex == index) "  ✓" else "") {
-                wallpaperIndex = index
-                prefs.edit().putInt("wallpaper", wallpaperIndex).apply()
-                showSettings()
+            val swatch = View(this).apply {
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, backgrounds[index]).apply {
+                    cornerRadius = dp(18).toFloat()
+                    if (wallpaperIndex == index) setStroke(dp(3), Color.WHITE)
+                }
+                contentDescription = names[index]
+                setOnClickListener {
+                    wallpaperIndex = index
+                    prefs.edit().putInt("wallpaper", index).apply()
+                    showSettings()
+                }
+            }
+            wallpaperRow.addView(swatch, LinearLayout.LayoutParams(0, dp(58), 1f).apply {
+                setMargins(dp(3), dp(2), dp(3), dp(2))
             })
         }
+        content.addView(wallpaperRow)
 
         content.addView(sectionTitle("Tamanho dos ícones"))
+        val sizeRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
         listOf(44 to "Pequeno", 52 to "Médio", 64 to "Grande").forEach { (size, label) ->
-            content.addView(settingButton(label + if (iconSize == size) "  ✓" else "") {
+            sizeRow.addView(choiceChip(label, iconSize == size) {
                 iconSize = size
-                prefs.edit().putInt("icon_size", iconSize).apply()
+                prefs.edit().putInt("icon_size", size).apply()
                 showSettings()
-            })
+            }, LinearLayout.LayoutParams(0, dp(44), 1f).apply { setMargins(dp(3), 0, dp(3), 0) })
         }
+        content.addView(sizeRow)
 
+        content.addView(settingsCard("Tela inicial", "Organize a gaveta e os ícones"))
         content.addView(sectionTitle("Colunas da gaveta"))
+        val columnsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
         listOf(3, 4, 5).forEach { count ->
-            content.addView(settingButton("$count colunas" + if (columns == count) "  ✓" else "") {
+            columnsRow.addView(choiceChip("$count", columns == count) {
                 columns = count
-                prefs.edit().putInt("columns", columns).apply()
+                prefs.edit().putInt("columns", count).apply()
                 showSettings()
-            })
+            }, LinearLayout.LayoutParams(0, dp(44), 1f).apply { setMargins(dp(3), 0, dp(3), 0) })
         }
+        content.addView(columnsRow)
 
-        content.addView(sectionTitle("Exibição"))
-        content.addView(settingButton(if (showLabels) "Ocultar nomes dos ícones" else "Mostrar nomes dos ícones") {
-            showLabels = !showLabels
-            prefs.edit().putBoolean("show_labels", showLabels).apply()
-            showSettings()
+        content.addView(sectionTitle("Elementos visíveis"))
+        content.addView(settingsToggle("Mostrar nomes dos aplicativos", "Exibe o nome abaixo dos ícones", showLabels) {
+            showLabels = it
+            prefs.edit().putBoolean("show_labels", it).apply()
         })
-        content.addView(settingButton(if (showDate) "Ocultar data" else "Mostrar data") {
-            showDate = !showDate
-            prefs.edit().putBoolean("show_date", showDate).apply()
-            showSettings()
+        content.addView(settingsToggle("Mostrar data", "Exibe a data abaixo do relógio", showDate) {
+            showDate = it
+            prefs.edit().putBoolean("show_date", it).apply()
+            root.findViewWithTag<TextView>("home_date")?.visibility = if (it) View.VISIBLE else View.GONE
         })
 
+        content.addView(settingsCard("Sistema", "Opções e informações do launcher"))
         content.addView(sectionTitle("Manutenção"))
-        content.addView(settingButton("Restaurar configurações") {
+        content.addView(settingsAction("Restaurar configurações", "Voltar às opções padrão") {
             AlertDialog.Builder(this)
                 .setTitle("Restaurar configurações?")
-                .setMessage("Isso apaga os favoritos e volta às opções padrão.")
+                .setMessage("Seus favoritos e preferências serão apagados.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Restaurar") { _, _ ->
                     prefs.edit().clear().apply()
@@ -317,8 +355,75 @@ class MainActivity : Activity() {
                     showSettings()
                 }.show()
         })
-        content.addView(text("HyperOS Launcher 1.2 • Projeto independente", 12f, 0xCCFFFFFF.toInt())
-            .apply { setPadding(0, dp(20), 0, dp(16)) })
+        content.addView(text("HyperOS Launcher 1.3\nInspirado nas interfaces Android 12+ • Projeto independente",
+            12f, 0xBFFFFFFF.toInt()).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(24), 0, dp(8))
+        })
+        animateEntrance(root)
+    }
+
+    private fun settingsCard(title: String, subtitle: String) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(16), dp(14), dp(16), dp(14))
+        background = rounded(0x22FFFFFF, 22)
+        addView(text(title, 18f, Color.WHITE, true))
+        addView(text(subtitle, 12f, 0xCCFFFFFF.toInt()).apply { setPadding(0, dp(3), 0, 0) })
+        layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(18); bottomMargin = dp(4)
+        }
+    }
+
+    private fun choiceChip(label: String, selected: Boolean, action: () -> Unit) =
+        TextView(this).apply {
+            text = if (selected) "✓  $label" else label
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = ripple(if (selected) 0x665D91FF else 0x22FFFFFF, 18)
+            setOnClickListener { action() }
+        }
+
+    private fun settingsToggle(title: String, subtitle: String, checked: Boolean, changed: (Boolean) -> Unit) =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(10), dp(10), dp(10))
+            background = ripple(0x1CFFFFFF, 18)
+            val labels = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.VERTICAL }
+            labels.addView(text(title, 14f, Color.WHITE, true))
+            labels.addView(text(subtitle, 11f, 0xBFFFFFFF.toInt()).apply { setPadding(0, dp(3), 0, 0) })
+            addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+            val toggle = Switch(this@MainActivity).apply {
+                isChecked = checked
+                setOnCheckedChangeListener { _, value -> changed(value) }
+            }
+            addView(toggle)
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
+        }
+
+    private fun settingsAction(title: String, subtitle: String, action: () -> Unit) =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(13), dp(14), dp(13))
+            background = ripple(0x22FFFFFF, 18)
+            addView(text(title, 14f, Color.WHITE, true))
+            addView(text(subtitle, 11f, 0xBFFFFFFF.toInt()).apply { setPadding(0, dp(3), 0, 0) })
+            setOnClickListener { action() }
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
+        }
+
+    private fun animateEntrance(view: View) {
+        view.alpha = 0f
+        view.translationY = dp(12).toFloat()
+        view.animate().alpha(1f).translationY(0f).setDuration(280L).start()
+    }
+
+    private fun ripple(color: Int, radius: Int): Drawable {
+        val shape = rounded(color, radius)
+        return android.graphics.drawable.RippleDrawable(
+            android.content.res.ColorStateList.valueOf(0x33FFFFFF), shape, null
+        )
     }
 
     private fun sectionTitle(value: String) = text(value, 17f, Color.WHITE, true).apply {
