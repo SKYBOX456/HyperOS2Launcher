@@ -37,6 +37,7 @@ class MainActivity : Activity() {
     private var showLabels = true
     private var showDate = true
     private var currentScreen = Screen.HOME
+    private var firstResume = true
 
     private enum class Screen { HOME, DRAWER, SETTINGS }
 
@@ -68,8 +69,14 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (apps.isNotEmpty()) {
-            loadApps()
+        if (firstResume) {
+            firstResume = false
+            return
+        }
+        val previousPackages = apps.map { it.info.packageName }
+        loadApps()
+        val currentPackages = apps.map { it.info.packageName }
+        if (previousPackages != currentPackages) {
             if (currentScreen == Screen.HOME) showHome()
             if (currentScreen == Screen.DRAWER && ::appGrid.isInitialized) renderApps(search.text.toString())
         }
