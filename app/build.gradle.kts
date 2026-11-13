@@ -9,8 +9,8 @@ android {
         applicationId = "com.skybox.hyperoslauncher"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.3"
+        versionCode = 4
+        versionName = "2.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
