@@ -2,6 +2,7 @@ package com.skybox.hyperoslauncher
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -38,6 +39,7 @@ class MainActivity : Activity() {
     private var showDate = true
     private var currentScreen = Screen.HOME
     private var firstResume = true
+    private var favoritesOnly = false
 
     private enum class Screen { HOME, DRAWER, SETTINGS }
 
@@ -46,7 +48,7 @@ class MainActivity : Activity() {
         intArrayOf(Color.rgb(12, 54, 74), Color.rgb(36, 125, 135)),
         intArrayOf(Color.rgb(70, 34, 52), Color.rgb(155, 74, 100)),
         intArrayOf(Color.rgb(26, 48, 39), Color.rgb(78, 116, 83)),
-        intArrayOf(Color.rgb(20, 9, 15), Color.rgb(70, 30, 58))
+        intArrayOf(Color.rgb(20, 9, 15), Color.rgb(70, 30, 58)), intArrayOf(Color.rgb(17, 35, 65), Color.rgb(85, 125, 190)), intArrayOf(Color.rgb(45, 25, 65), Color.rgb(130, 85, 160)), intArrayOf(Color.rgb(35, 40, 48), Color.rgb(100, 115, 130))
     )
 
     private val clockHandler = Handler(Looper.getMainLooper())
@@ -162,6 +164,11 @@ class MainActivity : Activity() {
         header.addView(text("Seu espaço, do seu jeito", 14f, 0xE6FFFFFF.toInt()))
         root.addView(header)
 
+        val widgetRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        widgetRow.addView(widgetCard("☀", "Clima", "Ver previsão") { try { startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/search?q=clima+hoje"))) } catch (_: Exception) { } }, LinearLayout.LayoutParams(0, dp(92), 1f))
+        widgetRow.addView(widgetCard("▦", "Calendário", "Ver agenda") { try { startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR)) } catch (_: Exception) { } }, LinearLayout.LayoutParams(0, dp(92), 1f).apply { leftMargin = dp(8) })
+        root.addView(widgetRow, LinearLayout.LayoutParams(-1, dp(100)).apply { topMargin = dp(16) })
+
         root.addView(actionButton("⌕    Pesquisar aplicativos") { showDrawer() },
             LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(20) })
 
@@ -206,6 +213,7 @@ class MainActivity : Activity() {
         actions.addView(actionButton("Configurações") { showSettings() },
             LinearLayout.LayoutParams(0, dp(46), 1f))
         root.addView(actions)
+        animateEntrance(root)
         updateClock()
     }
 
@@ -240,6 +248,7 @@ class MainActivity : Activity() {
             addView(appGrid)
         }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        animateEntrance(root)
         search.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -287,7 +296,7 @@ class MainActivity : Activity() {
 
         content.addView(settingsCard("Aparência", "Cores e tamanho dos elementos"))
         content.addView(sectionTitle("Papel de parede"))
-        val names = listOf("Lavanda", "Oceano", "Rosa", "Sálvia", "Ameixa")
+        val names = listOf("Lavanda", "Oceano", "Rosa", "Sálvia", "Ameixa", "Azul", "Violeta", "Grafite")
         val wallpaperRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
         backgrounds.indices.forEach { index ->
             val swatch = View(this).apply {
@@ -355,13 +364,15 @@ class MainActivity : Activity() {
                     showSettings()
                 }.show()
         })
-        content.addView(text("HyperOS Launcher 1.3\nInspirado nas interfaces Android 12+ • Projeto independente",
+        content.addView(text("HyperOS Launcher 2.0\nInspirado nas interfaces Android 12+ • Projeto independente",
             12f, 0xBFFFFFFF.toInt()).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(24), 0, dp(8))
         })
         animateEntrance(root)
     }
+
+    private fun widgetCard(symbol: String, title: String, subtitle: String, action: () -> Unit) = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(14), dp(10), dp(10), dp(10)); background = ripple(0x33FFFFFF, 22); addView(text(symbol, 22f, Color.WHITE, true)); addView(text(title, 14f, Color.WHITE, true)); addView(text(subtitle, 11f, 0xCCFFFFFF.toInt())); setOnClickListener { action() } }
 
     private fun settingsCard(title: String, subtitle: String) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
