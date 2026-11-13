@@ -242,6 +242,11 @@ class MainActivity : Activity() {
             topMargin = dp(14); bottomMargin = dp(10)
         })
 
+        val filters = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        filters.addView(choiceChip("Todos", true) { favoritesOnly = false; renderApps(search.text.toString()) }, LinearLayout.LayoutParams(0, dp(38), 1f))
+        filters.addView(choiceChip("Favoritos", false) { favoritesOnly = true; renderApps(search.text.toString()) }, LinearLayout.LayoutParams(0, dp(38), 1f))
+        root.addView(filters, LinearLayout.LayoutParams(-1, dp(42)))
+
         appGrid = GridLayout(this).apply { columnCount = columns; useDefaultMargins = false }
         val scroll = ScrollView(this).apply {
             isFillViewport = false
@@ -452,6 +457,7 @@ class MainActivity : Activity() {
         if (!::appGrid.isInitialized) return
         appGrid.removeAllViews()
         apps.asSequence()
+            .filter { !favoritesOnly || favorites.contains(it.info.packageName) }
             .filter { it.label.contains(filter, ignoreCase = true) }
             .forEach { appGrid.addView(appTile(it), tileParams()) }
     }
